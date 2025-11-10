@@ -215,16 +215,6 @@ This project is licensed under the MIT License.
 
 ---
 
-## 📞 Contact & Support
-
-Have questions? Reach out to us!
-
-- 📧 Email: [support@bankauctions.com](mailto:support@bankauctions.com)
-- 🌐 Website: [www.bankauctions.com](https://bankauctions.com)
-- 💬 Discord: [Join our community](#)
-
----
-
 <div align="center">
 
 ### Ready to invest in your future? 🚀

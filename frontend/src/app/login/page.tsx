@@ -1,11 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
@@ -100,15 +104,45 @@ export default function LoginPage() {
                   Sign in to access your account
                 </p>
 
-                <form className="space-y-6">
+                <form className="space-y-6" onSubmit={async (e) => {
+                  e.preventDefault();
+                  setError(null);
+                  setLoading(true);
+                  const form = e.currentTarget as HTMLFormElement;
+                  const formData = new FormData(form);
+                  try {
+                    const body: any = {};
+                    formData.forEach((v, k) => body[k] = v);
+                    const res = await fetch('http://127.0.0.1:8000/api/auth/token/', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ username: body.email || body.username, password: body.password }),
+                    });
+                    if (!res.ok) {
+                      const data = await res.json().catch(() => ({}));
+                      throw new Error(data.detail || 'Invalid credentials');
+                    }
+                    const data = await res.json();
+                    localStorage.setItem('access_token', data.access);
+                    localStorage.setItem('refresh_token', data.refresh);
+                    // redirect to home
+                    router.push('/');
+                  } catch (err: any) {
+                    setError(err.message || 'Login failed');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}>
                   <div>
                     <label className="block text-sm font-bold mb-2 text-gray-300">
                       EMAIL ADDRESS
                     </label>
                     <input
+                      name="username"
                       type="email"
                       placeholder="Enter your email"
                       className="w-full px-4 py-3 bg-black border-2 border-white/20 focus:border-[#00FF41] outline-none transition-colors text-white placeholder:text-gray-600"
+                      required
                     />
                   </div>
 
@@ -117,9 +151,11 @@ export default function LoginPage() {
                       PASSWORD
                     </label>
                     <input
+                      name="password"
                       type="password"
                       placeholder="Enter your password"
                       className="w-full px-4 py-3 bg-black border-2 border-white/20 focus:border-[#00FF41] outline-none transition-colors text-white placeholder:text-gray-600"
+                      required
                     />
                   </div>
 
@@ -138,10 +174,12 @@ export default function LoginPage() {
 
                   <button
                     type="submit"
-                    className="w-full py-4 bg-[#00FF41] text-black font-black text-lg hover:bg-[#00FF41]/90 transition-all"
+                    disabled={loading}
+                    className="w-full py-4 bg-[#00FF41] text-black font-black text-lg hover:bg-[#00FF41]/90 transition-all disabled:opacity-50"
                   >
-                    Sign In
+                    {loading ? 'Signing in...' : 'Sign In'}
                   </button>
+                  {error && <div className="text-red-500 mt-2 font-bold">{error}</div>}
                 </form>
               </motion.div>
             ) : (
@@ -159,15 +197,50 @@ export default function LoginPage() {
                   Join thousands of smart investors
                 </p>
 
-                <form className="space-y-6">
+                <form className="space-y-6" onSubmit={async (e) => {
+                  e.preventDefault();
+                  setError(null);
+                  setLoading(true);
+                  const form = e.currentTarget as HTMLFormElement;
+                  const formData = new FormData(form);
+                  try {
+                    const body: any = {};
+                    formData.forEach((v, k) => body[k] = v);
+                    const res = await fetch('http://127.0.0.1:8000/api/auth/register/', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ username: body.email, email: body.email, password: body.password, password2: body.password2, first_name: body.full_name }),
+                    });
+                    if (!res.ok) {
+                      const data = await res.json().catch(() => ({}));
+                      throw new Error((data && JSON.stringify(data)) || 'Registration failed');
+                    }
+                    // auto-login after register
+                    const tokenRes = await fetch('http://127.0.0.1:8000/api/auth/token/', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ username: body.email, password: body.password }),
+                    });
+                    const tokenData = await tokenRes.json();
+                    localStorage.setItem('access_token', tokenData.access);
+                    localStorage.setItem('refresh_token', tokenData.refresh);
+                    router.push('/');
+                  } catch (err: any) {
+                    setError(err.message || 'Signup failed');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}>
                   <div>
                     <label className="block text-sm font-bold mb-2 text-gray-300">
                       FULL NAME
                     </label>
                     <input
+                      name="full_name"
                       type="text"
                       placeholder="Enter your full name"
                       className="w-full px-4 py-3 bg-black border-2 border-white/20 focus:border-[#00FF41] outline-none transition-colors text-white placeholder:text-gray-600"
+                      required
                     />
                   </div>
 
@@ -176,9 +249,11 @@ export default function LoginPage() {
                       EMAIL ADDRESS
                     </label>
                     <input
+                      name="email"
                       type="email"
                       placeholder="Enter your email"
                       className="w-full px-4 py-3 bg-black border-2 border-white/20 focus:border-[#00FF41] outline-none transition-colors text-white placeholder:text-gray-600"
+                      required
                     />
                   </div>
 
@@ -187,9 +262,11 @@ export default function LoginPage() {
                       PASSWORD
                     </label>
                     <input
+                      name="password"
                       type="password"
                       placeholder="Create a password"
                       className="w-full px-4 py-3 bg-black border-2 border-white/20 focus:border-[#00FF41] outline-none transition-colors text-white placeholder:text-gray-600"
+                      required
                     />
                   </div>
 
@@ -198,9 +275,11 @@ export default function LoginPage() {
                       CONFIRM PASSWORD
                     </label>
                     <input
+                      name="password2"
                       type="password"
                       placeholder="Confirm your password"
                       className="w-full px-4 py-3 bg-black border-2 border-white/20 focus:border-[#00FF41] outline-none transition-colors text-white placeholder:text-gray-600"
+                      required
                     />
                   </div>
 
@@ -223,10 +302,12 @@ export default function LoginPage() {
 
                   <button
                     type="submit"
-                    className="w-full py-4 bg-[#00FF41] text-black font-black text-lg hover:bg-[#00FF41]/90 transition-all"
+                    disabled={loading}
+                    className="w-full py-4 bg-[#00FF41] text-black font-black text-lg hover:bg-[#00FF41]/90 transition-all disabled:opacity-50"
                   >
-                    Create Account
+                    {loading ? 'Creating...' : 'Create Account'}
                   </button>
+                  {error && <div className="text-red-500 mt-2 font-bold">{error}</div>}
                 </form>
               </motion.div>
             )}
